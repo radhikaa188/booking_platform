@@ -1,8 +1,6 @@
-from app.database import engine
+from app.database import engine, Base
+from app import models
 
-try:
-    connection = engine.connect()
-    print("✅ Connected to the database successfully!")
-    connection.close()
-except Exception as e:
-    print("❌ Connection failed:", e)
+print("Tables SQLAlchemy knows about:")
+for table_name in Base.metadata.tables.keys():
+    print(" -", table_name)
