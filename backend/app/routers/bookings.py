@@ -10,7 +10,7 @@ def book_seat(request: schemas.BookingRequest, db: Session = Depends(get_db)):
     # Step 1: Check if seat is available
     event_seat = db.query(models.EventSeat).filter(
         models.EventSeat.id == request.event_seat_id
-    ).first()
+    ).with_for_update().first()
 
     if not event_seat:
         raise HTTPException(status_code=404, detail="Seat not found")
