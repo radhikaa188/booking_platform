@@ -34,7 +34,8 @@ CREATE TABLE seats (
     screen_id INTEGER REFERENCES screens(id),
     row_id CHAR(1) NOT NULL,
     seat_no INTEGER,
-    seat_category seat_category_enum
+    seat_category seat_category_enum,
+    UNIQUE(screen_id, row_id, seat_no)
 );
 
 CREATE TABLE events (

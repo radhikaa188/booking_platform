@@ -21,12 +21,12 @@ class Screen(Base):
     id = Column(Integer, primary_key=True)
     venue_id = Column(Integer, ForeignKey("venues.id"))
     name = Column(String, nullable=False)
-    screen_type = Column(Enum(ScreenType))
+    screen_type = Column(Enum(ScreenType, name="screen_type_enum"))
 
 class SeatCategory(str, enum.Enum):
     regular = "regular"
     premium = "premium"
-    recliner = "recliner"
+    reclinear = "reclinear"
 
 class Seat(Base):
     __tablename__ = "seats"
@@ -35,9 +35,10 @@ class Seat(Base):
     screen_id = Column(Integer, ForeignKey("screens.id"))
     row_id = Column(String(1), nullable=False)
     seat_no = Column(Integer)
-    seat_category = Column(Enum(SeatCategory))
+    seat_category = Column(Enum(SeatCategory, name="seat_category_enum"))
 
-
+    __table_args__ = (UniqueConstraint("screen_id", "row_id", "seat_no"),)
+     
 class Event(Base):
     __tablename__ = "events"
 
@@ -60,7 +61,7 @@ class EventSeat(Base):
     id = Column(Integer, primary_key=True)
     event_id = Column(Integer, ForeignKey("events.id"))
     seat_id = Column(Integer, ForeignKey("seats.id"))
-    seat_status = Column(Enum(SeatStatus), nullable=False, default="available")
+    seat_status = Column(Enum(SeatStatus, name="seat_status_enum"), nullable=False, default="available")
     hold_expires_at = Column(DateTime)
     version = Column(Integer, nullable=False, default=0)
 
@@ -78,7 +79,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role = Column(Enum(UserRole), nullable=False, default="user")
+    role = Column(Enum(UserRole, name="user_role_enum"), nullable=False, default="user")
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
 class BookingStatus(str, enum.Enum):
@@ -91,8 +92,8 @@ class Booking(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    booking_status = Column(Enum(BookingStatus), nullable=False, default="pending")
+    booking_time = Column(DateTime, nullable=False, server_default=func.now())
+    booking_status = Column(Enum(BookingStatus, name="booking_status_enum"), nullable=False, default="pending")
 
 
 class BookingSeat(Base):
