@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
+from app.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/screens", tags=["screens"])
 
@@ -10,7 +11,7 @@ def list_screens(db: Session = Depends(get_db)):
     return db.query(models.Screen).all()
 
 @router.post("/{screen_id}/seats", response_model=list[schemas.SeatOut])
-def add_seats_to_screen(screen_id: int, layout: list[schemas.SeatLayoutRow], db: Session = Depends(get_db)):
+def add_seats_to_screen(screen_id: int, layout: list[schemas.SeatLayoutRow], db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
     screen = db.query(models.Screen).filter(models.Screen.id == screen_id).first()
     if not screen:
         raise HTTPException(status_code=404, detail="Screen not found")

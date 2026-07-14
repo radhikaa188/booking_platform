@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
+from app.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/venues", tags=["venues"])
 
@@ -10,7 +11,7 @@ def list_venues(db: Session = Depends(get_db)):
     return db.query(models.Venue).all()
 
 @router.post("/onboard", response_model=schemas.VenueOut)
-def onboard_venue(payload: schemas.VenueOnboard, db: Session = Depends(get_db)):
+def onboard_venue(payload: schemas.VenueOnboard, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
     try:
         new_venue = models.Venue(name=payload.name, address=payload.address, city=payload.city)
         db.add(new_venue)
@@ -43,7 +44,7 @@ def onboard_venue(payload: schemas.VenueOnboard, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Onboarding failed: {str(e)}")
 
 @router.post("/{venue_id}/screens", response_model=schemas.ScreenOut)
-def add_screen_to_venue(venue_id: int, screen_data: schemas.ScreenOnboard, db: Session = Depends(get_db)):
+def add_screen_to_venue(venue_id: int, screen_data: schemas.ScreenOnboard, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
     venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")

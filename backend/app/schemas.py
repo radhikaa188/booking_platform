@@ -123,7 +123,6 @@ class VenueOnboard(BaseModel):
     screens: list[ScreenOnboard]
 
 class BookingRequest(BaseModel):
-    user_id: int
     event_seat_id: int
 
 class BookingOut(BaseModel):

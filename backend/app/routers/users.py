@@ -3,11 +3,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import hash_password
+from app.auth import require_admin
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/", response_model=list[schemas.UserOut])
-def list_users(db: Session = Depends(get_db)):
+def list_users(db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
     return db.query(models.User).all()
 
 @router.post("/", response_model=schemas.UserOut)
