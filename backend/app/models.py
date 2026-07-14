@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
-
+#python does not understand sql so we create same table in python
 class Venue(Base):
     __tablename__ = "venues"
 

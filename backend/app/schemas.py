@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+# Because models.py describes how data is stored, while schema.py describes what data the API accepts or returns.
 #event
 class EventBase(BaseModel):
     name: str
@@ -132,3 +133,7 @@ class BookingOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
