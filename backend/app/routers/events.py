@@ -3,16 +3,31 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
+from cachetools import TTLCache
+
+events_cache = TTLCache(maxsize=100, ttl=300)
 
 router = APIRouter(prefix="/events", tags=["events"])
-
+    
 @router.get("/", response_model=list[schemas.EventOut])
 def list_events(db: Session = Depends(get_db)):
+    if "all_events" in events_cache:
+        print("✅ Serving from CACHE")
+        return events_cache["all_events"]
+    
+    print("🔍 Querying DATABASE")
     events = db.query(models.Event).all()
+    events_cache["all_events"] = events
     return events
 
 @router.post("/", response_model=schemas.EventOut)
 def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
+    if event.start_time >= event.end_time:
+        raise HTTPException(status_code=400, detail="start_time must be before end_time")
+
+    screen = db.query(models.Screen).filter(models.Screen.id == event.screen_id).first()
+    if not screen:
+        raise HTTPException(status_code=404, detail="Screen not found")
     new_event = models.Event(
         name=event.name,
         description=event.description,

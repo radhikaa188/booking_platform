@@ -1,8 +1,22 @@
 from fastapi import FastAPI
 from app.routers import events, venues, screens, seats, users, event_seats, bookings, auth
+from app.background_jobs import scheduler
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 
 # a building no department connected yet
 app = FastAPI(title="Event Booking Platform")
+
+@app.on_event("startup")
+def start_scheduler():
+    scheduler.start()
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 # events dept connected to app
 app.include_router(events.router)
