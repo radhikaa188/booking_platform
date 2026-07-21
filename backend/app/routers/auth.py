@@ -19,4 +19,4 @@ def login(request: Request, credentials: schemas.LoginRequest, db: Session = Dep
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token(data={"user_id": user.id, "role": user.role.value})
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer", "role": user.role.value}

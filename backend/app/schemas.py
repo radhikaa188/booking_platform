@@ -136,3 +136,6 @@ class BookingOut(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class PaymentRequest(BaseModel):
+    idempotency_key: str

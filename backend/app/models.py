@@ -94,7 +94,7 @@ class Booking(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     booking_time = Column(DateTime, nullable=False, server_default=func.now())
     booking_status = Column(Enum(BookingStatus, name="booking_status_enum"), nullable=False, default="pending")
-
+    idempotency_key = Column(String, unique=True, nullable=True)
 
 class BookingSeat(Base):
     __tablename__ = "booking_seats"

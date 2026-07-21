@@ -7,20 +7,18 @@ from app.auth import get_current_user, require_admin
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi import Request
+from app.payment_gateway import process_payment
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 limiter = Limiter(key_func=get_remote_address)
 
 HOLD_DURATION_MINUTES = 5
-
 @router.post("/hold", response_model=schemas.BookingOut)
-
 @limiter.limit("5/minute")
-
-def hold_seat(request: schemas.BookingRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def hold_seat(request: Request, body: schemas.BookingRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     event_seat = db.query(models.EventSeat).filter(
-        models.EventSeat.id == request.event_seat_id
+        models.EventSeat.id == body.event_seat_id   # ← request.event_seat_id NAHI, body.event_seat_id
     ).with_for_update().first()
 
     if not event_seat:
@@ -75,5 +73,54 @@ def confirm_booking(booking_id: int, db: Session = Depends(get_db), current_user
     booking.booking_status = "confirmed"
     db.commit()
     db.refresh(booking)
+
+    return booking
+
+@router.post("/{booking_id}/pay", response_model=schemas.BookingOut)
+def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+
+    # Step 1: Idempotency check — same key se pehle try to nahi hua?
+    existing = db.query(models.Booking).filter(
+        models.Booking.idempotency_key == payment.idempotency_key
+    ).first()
+
+    if existing:
+        # Ye request pehle bhi aayi thi — dobara process mat karo, seedha purana result do
+        return existing
+
+    booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+    if not booking or booking.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.booking_status != "pending":
+        raise HTTPException(status_code=400, detail="Booking is not pending payment")
+
+    booking_seat = db.query(models.BookingSeat).filter(models.BookingSeat.booking_id == booking_id).first()
+    event_seat = db.query(models.EventSeat).filter(
+        models.EventSeat.id == booking_seat.event_seat_id
+    ).with_for_update().first()
+
+    if event_seat.seat_status != "held":
+        raise HTTPException(status_code=400, detail="Hold has expired")
+
+    # Step 2: Payment process karo (simulated gateway)
+    payment_result = process_payment(booking_seat.price_paid)
+
+    # Step 3: Result ke hisaab se booking update karo
+    if payment_result["status"] == "success":
+        event_seat.seat_status = "booked"
+        event_seat.hold_expires_at = None
+        booking.booking_status = "confirmed"
+    else:
+        event_seat.seat_status = "available"
+        event_seat.hold_expires_at = None
+        booking.booking_status = "cancelled"
+
+    booking.idempotency_key = payment.idempotency_key
+    db.commit()
+    db.refresh(booking)
+
+    if payment_result["status"] != "success":
+        raise HTTPException(status_code=402, detail="Payment failed. Seat released.")
 
     return booking

@@ -76,7 +76,8 @@ CREATE TABLE bookings (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     booking_time TIMESTAMP NOT NULL DEFAULT NOW(),
-    booking_status booking_status_enum NOT NULL DEFAULT 'pending'
+    booking_status booking_status_enum NOT NULL DEFAULT 'pending',
+    idempotency_key VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE booking_seats (

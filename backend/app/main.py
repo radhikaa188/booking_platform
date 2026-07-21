@@ -4,10 +4,20 @@ from app.background_jobs import scheduler
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 # a building no department connected yet
 app = FastAPI(title="Event Booking Platform")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def start_scheduler():
