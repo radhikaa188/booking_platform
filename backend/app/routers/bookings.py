@@ -12,7 +12,7 @@ from app.logger import logger
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
-limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
+limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("REDIS_URL"))
 
 HOLD_DURATION_MINUTES = 5
 @router.post("/hold", response_model=schemas.BookingOut)
