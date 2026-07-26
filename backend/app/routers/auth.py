@@ -5,9 +5,10 @@ from app import models, schemas
 from app.auth import verify_password, create_access_token
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
+limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("REDIS_URL"))
 
 
 @router.post("/login")
