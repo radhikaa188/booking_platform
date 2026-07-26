@@ -17,3 +17,15 @@ def process_payment(amount: float) -> dict:
         "status": "success" if success else "failed",
         "amount": amount
     }
+
+def process_refund(amount: float, original_transaction_id: str) -> dict:
+    """
+    Simulates a refund through the payment gateway.
+    """
+    refund_id = str(uuid.uuid4())
+    return {
+        "refund_id": refund_id,
+        "original_transaction_id": original_transaction_id,
+        "status": "refunded",
+        "amount": amount
+    }

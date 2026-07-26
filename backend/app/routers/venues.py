@@ -3,22 +3,24 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
-from cachetools import TTLCache
 
-venues_cache = TTLCache(maxsize=100, ttl=300)
+from app.redis_client import get_cache, set_cache
+
+
+#venues_cache = TTLCache(maxsize=100, ttl=300)
 
 router = APIRouter(prefix="/venues", tags=["venues"])
 
 @router.get("/", response_model=list[schemas.VenueOut])
 def list_venues(db: Session = Depends(get_db)):
-    if "all_venues" in venues_cache:
-        print("✅ Serving from CACHE")
-        return venues_cache["all_venues"]
-    
-    print("🔍 Querying DATABASE")
+    cached = get_cache("all_venues")
+    if cached:
+        return cached
+
     venues = db.query(models.Venue).all()
-    venues_cache["all_venues"] = venues
-    return venues
+    result = [schemas.VenueOut.model_validate(v).model_dump() for v in venues]
+    set_cache("all_venues", result, ttl_seconds=300)
+    return result
 
 @router.post("/onboard", response_model=schemas.VenueOut)
 def onboard_venue(payload: schemas.VenueOnboard, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):

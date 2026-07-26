@@ -8,7 +8,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 router = APIRouter(prefix="/users", tags=["users"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
 
 @router.get("/", response_model=list[schemas.UserOut])
 def list_users(db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):

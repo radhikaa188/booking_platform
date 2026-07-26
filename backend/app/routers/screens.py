@@ -3,22 +3,23 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
-from cachetools import TTLCache
+from app.redis_client import get_cache, set_cache
 
-screens_cache = TTLCache(maxsize=100, ttl=300)
+
+#screens_cache = TTLCache(maxsize=100, ttl=300)
 
 router = APIRouter(prefix="/screens", tags=["screens"])
 
 @router.get("/", response_model=list[schemas.ScreenOut])
 def list_screens(db: Session = Depends(get_db)):
-    if "all_screens" in screens_cache:
-        print("✅ Serving from CACHE")
-        return screens_cache["all_screens"]
+    cached = get_cache("all_screens")
+    if cached:
+        return cached
 
-    print("🔍 Querying DATABASE")
     screens = db.query(models.Screen).all()
-    screens_cache["all_screens"] = screens
-    return screens
+    result = [schemas.ScreenOut.model_validate(s).model_dump() for s in screens]
+    set_cache("all_screens", result, ttl_seconds=300)
+    return result
 
 @router.post("/{screen_id}/seats", response_model=list[schemas.SeatOut])
 def add_seats_to_screen(screen_id: int, layout: list[schemas.SeatLayoutRow], db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):

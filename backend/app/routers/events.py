@@ -4,6 +4,8 @@ from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
 from cachetools import TTLCache
+from app.redis_client import get_cache, set_cache
+
 
 events_cache = TTLCache(maxsize=100, ttl=300)
 
@@ -11,15 +13,17 @@ router = APIRouter(prefix="/events", tags=["events"])
     
 @router.get("/", response_model=list[schemas.EventOut])
 def list_events(db: Session = Depends(get_db)):
-    if "all_events" in events_cache:
-        print("✅ Serving from CACHE")
-        return events_cache["all_events"]
-    
+    cached = get_cache("all_events")
+    if cached:
+        print("✅ Serving from REDIS CACHE")
+        return cached
+
     print("🔍 Querying DATABASE")
     events = db.query(models.Event).all()
-    events_cache["all_events"] = events
-    return events
-
+    result = [schemas.EventOut.model_validate(e).model_dump() for e in events]
+    set_cache("all_events", result, ttl_seconds=300)
+    return result
+    
 @router.post("/", response_model=schemas.EventOut)
 def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
     if event.start_time >= event.end_time:

@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database import get_db
 import os
 from dotenv import load_dotenv
+import bcrypt
 
 load_dotenv()
 
@@ -14,9 +14,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-import bcrypt
 
 def hash_password(password: str) -> str:
     if len(password.encode("utf-8")) > 72:

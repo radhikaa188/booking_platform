@@ -7,11 +7,12 @@ from app.auth import get_current_user, require_admin
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi import Request
-from app.payment_gateway import process_payment
+from app.payment_gateway import process_payment, process_refund
+from app.logger import logger
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
 
 HOLD_DURATION_MINUTES = 5
 @router.post("/hold", response_model=schemas.BookingOut)
@@ -47,34 +48,10 @@ def hold_seat(request: Request, body: schemas.BookingRequest, db: Session = Depe
     db.add(booking_seat)
     db.commit()
     db.refresh(new_booking)
-
+    logger.info(f"Seat {body.event_seat_id} held by user {current_user.id}, booking {new_booking.id}")
     return new_booking
 
 
-@router.post("/{booking_id}/confirm", response_model=schemas.BookingOut)
-def confirm_booking(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()
-    if not booking or booking.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Booking not found")
-
-    if booking.booking_status != "pending":
-        raise HTTPException(status_code=400, detail="Booking cannot be confirmed")
-
-    booking_seat = db.query(models.BookingSeat).filter(models.BookingSeat.booking_id == booking_id).first()
-    event_seat = db.query(models.EventSeat).filter(
-        models.EventSeat.id == booking_seat.event_seat_id
-    ).with_for_update().first()
-
-    if event_seat.seat_status != "held":
-        raise HTTPException(status_code=400, detail="Hold has expired")
-
-    event_seat.seat_status = "booked"
-    event_seat.hold_expires_at = None
-    booking.booking_status = "confirmed"
-    db.commit()
-    db.refresh(booking)
-
-    return booking
 
 @router.post("/{booking_id}/pay", response_model=schemas.BookingOut)
 def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -108,10 +85,12 @@ def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Sessio
 
     # Step 3: Result ke hisaab se booking update karo
     if payment_result["status"] == "success":
+        logger.info(f"Payment SUCCESS for booking {booking_id}, transaction {payment_result['transaction_id']}")
         event_seat.seat_status = "booked"
         event_seat.hold_expires_at = None
         booking.booking_status = "confirmed"
     else:
+        logger.warning(f"Payment FAILED for booking {booking_id}, transaction {payment_result['transaction_id']}")
         event_seat.seat_status = "available"
         event_seat.hold_expires_at = None
         booking.booking_status = "cancelled"
@@ -122,5 +101,35 @@ def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Sessio
 
     if payment_result["status"] != "success":
         raise HTTPException(status_code=402, detail="Payment failed. Seat released.")
+
+    return booking
+
+@router.post("/{booking_id}/cancel", response_model=schemas.BookingOut)
+def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+
+    if not booking or booking.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.booking_status != "confirmed":
+        raise HTTPException(status_code=400, detail="Only confirmed bookings can be cancelled")
+
+    booking_seat = db.query(models.BookingSeat).filter(models.BookingSeat.booking_id == booking_id).first()
+    event_seat = db.query(models.EventSeat).filter(
+        models.EventSeat.id == booking_seat.event_seat_id
+    ).with_for_update().first()
+
+    # Refund process karo
+    refund_result = process_refund(booking_seat.price_paid, booking.idempotency_key)
+
+    event_seat.seat_status = "available"
+    event_seat.hold_expires_at = None
+    booking.booking_status = "cancelled"
+    booking.refund_transaction_id = refund_result["refund_id"]
+
+    db.commit()
+    db.refresh(booking)
+
+    logger.info(f"Booking {booking_id} cancelled, refund {refund_result['refund_id']} issued for ₹{booking_seat.price_paid}")
 
     return booking
