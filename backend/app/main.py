@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from sqlalchemy import text
-
+import os
 
 # a building no department connected yet
 app = FastAPI(title="Event Booking Platform")
@@ -33,7 +33,7 @@ def health_check():
 def start_scheduler():
     scheduler.start()
 
-limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
+limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("REDIS_URL"))
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
