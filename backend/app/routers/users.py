@@ -6,6 +6,7 @@ from app.auth import hash_password
 from app.auth import require_admin
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import os
 
 router = APIRouter(prefix="/users", tags=["users"])
 limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("REDIS_URL"))

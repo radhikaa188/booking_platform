@@ -9,6 +9,7 @@ from slowapi.util import get_remote_address
 from fastapi import Request
 from app.payment_gateway import process_payment, process_refund
 from app.logger import logger
+import os
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
