@@ -135,7 +135,7 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user:
 
     return booking
 
-@router.get("/", response_model=list[schemas.BookingDetailOut])
+@router.get("", response_model=list[schemas.BookingDetailOut])
 def get_user_bookings(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     bookings = (
         db.query(models.Booking)
