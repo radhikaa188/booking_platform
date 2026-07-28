@@ -6,18 +6,19 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     navigate("/login");
   };
 
   if (!isLoggedIn) return null;
 
   return (
-    <nav style={{ padding: "10px", borderBottom: "1px solid gray" }}>
-      <Link to="/events" style={{ marginRight: "10px" }}>Events</Link>
-      <button onClick={handleLogout}>Logout</button>
-        {localStorage.getItem("role") === "admin" && (
-    <Link to="/admin" style={{ marginRight: "10px" }}>Admin</Link>
-    )}
+    <nav className="navbar">
+      <Link to="/events" className="navbar-link navbar-link-events">Events</Link>
+      {localStorage.getItem("role") === "admin" && (
+        <Link to="/admin" className="navbar-link navbar-link-admin">Admin</Link>
+      )}
+      <button onClick={handleLogout} className="navbar-btn-logout">Logout</button>
     </nav>
   );
 }

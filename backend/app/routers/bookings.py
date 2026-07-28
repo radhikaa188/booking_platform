@@ -134,3 +134,76 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user:
     logger.info(f"Booking {booking_id} cancelled, refund {refund_result['refund_id']} issued for ₹{booking_seat.price_paid}")
 
     return booking
+
+@router.get("/", response_model=list[schemas.BookingDetailOut])
+def get_user_bookings(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    bookings = (
+        db.query(models.Booking)
+        .filter(models.Booking.user_id == current_user.id)
+        .all()
+    )
+
+    result = []
+
+    for booking in bookings:
+        booking_seats = (
+            db.query(models.BookingSeat)
+            .filter(models.BookingSeat.booking_id == booking.id)
+            .all()
+        )
+
+        seat_numbers = []
+
+        event = None
+        screen = None
+        venue = None
+
+        for booking_seat in booking_seats:
+            event_seat = (
+                db.query(models.EventSeat)
+                .filter(models.EventSeat.id == booking_seat.event_seat_id)
+                .first()
+            )
+
+            seat = (
+                db.query(models.Seat)
+                .filter(models.Seat.id == event_seat.seat_id)
+                .first()
+            )
+
+            seat_numbers.append(f"{seat.row_id}{seat.seat_no}")
+
+            # Get event details once
+            if event is None:
+                event = (
+                    db.query(models.Event)
+                    .filter(models.Event.id == event_seat.event_id)
+                    .first()
+                )
+
+                screen = (
+                    db.query(models.Screen)
+                    .filter(models.Screen.id == event.screen_id)
+                    .first()
+                )
+
+                venue = (
+                    db.query(models.Venue)
+                    .filter(models.Venue.id == screen.venue_id)
+                    .first()
+                )
+
+        result.append(
+            schemas.BookingDetailOut(
+                id=booking.id,
+                user_id=booking.user_id,
+                booking_status=booking.booking_status,
+                event_name=event.name,
+                venue_name=venue.name,
+                screen_name=screen.name,
+                seat_numbers=seat_numbers,
+                booking_time=booking.booking_time
+            )
+        )
+
+    return result

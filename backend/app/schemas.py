@@ -133,6 +133,16 @@ class BookingOut(BaseModel):
     class Config:
         from_attributes = True
 
+class BookingDetailOut(BookingOut):
+    event_name: str
+    venue_name: str
+    screen_name: str
+    seat_numbers: list[str]
+    booking_time: datetime
+    
+    class Config:
+        from_attributes = True
+
 class LoginRequest(BaseModel):
     email: str
     password: str
