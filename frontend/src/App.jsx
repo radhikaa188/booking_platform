@@ -9,6 +9,8 @@ import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import MyBookings from "./pages/MyBookings";
+import Profile from "./pages/Profile";
+import BookingSuccess from "./pages/BookingSuccess";
 import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
         <Toaster position="top-right" />
         <Routes>
           <Route element={<MainLayout />}>
+            {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:eventId" element={<EventDetail />} />
@@ -34,7 +37,12 @@ function App() {
             } />
             <Route path="/profile" element={
               <ProtectedRoute>
-                <div>Profile TODO</div>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/booking-success" element={
+              <ProtectedRoute>
+                <BookingSuccess />
               </ProtectedRoute>
             } />
 
@@ -46,9 +54,21 @@ function App() {
             } />
           </Route>
 
-          {/* Error Pages */}
-          <Route path="/unauthorized" element={<div>Unauthorized TODO</div>} />
-          <Route path="/404" element={<div>404 TODO</div>} />
+          {/* Fallback & Error Handling */}
+          <Route path="/unauthorized" element={
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-4">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Access Denied</h1>
+              <p className="text-slate-500 mb-6">You do not have permission to view this page.</p>
+              <a href="/" className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg">Return Home</a>
+            </div>
+          } />
+          <Route path="/404" element={
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-4">
+              <h1 className="text-4xl font-black text-slate-900 mb-2">404</h1>
+              <p className="text-slate-500 mb-6">Page not found.</p>
+              <a href="/" className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg">Return Home</a>
+            </div>
+          } />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </BrowserRouter>

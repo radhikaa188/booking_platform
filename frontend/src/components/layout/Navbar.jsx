@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
-import { LogOut, User, Menu, X, Calendar, LayoutDashboard, History } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, User, Menu, X, Calendar, LayoutDashboard, History, Home } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -16,15 +15,19 @@ const Navbar = () => {
   };
 
   const navLinks = [
+    { label: 'Home', path: '/', icon: Home },
     { label: 'Events', path: '/events', icon: Calendar },
-    ...(user ? [
-      { label: 'My Bookings', path: '/my-bookings', icon: History },
-      ...(user.role === 'admin' ? [{ label: 'Admin', path: '/admin', icon: LayoutDashboard }] : [])
-    ] : [])
+    ...(user
+      ? [
+          { label: 'My Bookings', path: '/my-bookings', icon: History },
+          { label: 'Profile', path: '/profile', icon: User },
+          ...(user.role === 'admin' ? [{ label: 'Admin', path: '/admin', icon: LayoutDashboard }] : []),
+        ]
+      : []),
   ];
 
   return (
-    <nav className="bg-white border-b border-slate-100 sticky top-0 z-50">
+    <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -40,7 +43,7 @@ const Navbar = () => {
                   to={link.path}
                   className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors"
                 >
-                  <link.icon className="w-4 h-4 mr-2" />
+                  <link.icon className="w-4 h-4 mr-2 text-slate-400 group-hover:text-primary-600" />
                   {link.label}
                 </Link>
               ))}
@@ -50,9 +53,9 @@ const Navbar = () => {
           <div className="hidden sm:flex sm:items-center sm:space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link to="/profile" className="text-slate-600 hover:text-primary-600">
-                  <User className="w-5 h-5" />
-                </Link>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 uppercase tracking-wider">
+                  {user.role}
+                </span>
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="text-slate-600">
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -99,26 +102,16 @@ const Navbar = () => {
           </div>
           <div className="pt-4 pb-3 border-t border-slate-100 px-4 space-y-2">
             {user ? (
-              <>
-                <Link
-                  to="/profile"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center text-base font-medium text-slate-600 hover:text-primary-600"
-                >
-                  <User className="w-5 h-5 mr-3" />
-                  Profile
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className="flex items-center w-full text-left text-base font-medium text-slate-600 hover:text-primary-600"
-                >
-                  <LogOut className="w-5 h-5 mr-3" />
-                  Logout
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsMenuOpen(false);
+                }}
+                className="flex items-center w-full text-left text-base font-medium text-slate-600 hover:text-primary-600"
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                Logout
+              </button>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <Link to="/login" onClick={() => setIsMenuOpen(false)}>
