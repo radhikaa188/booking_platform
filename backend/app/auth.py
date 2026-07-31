@@ -7,6 +7,7 @@ from app.database import get_db
 import os
 from dotenv import load_dotenv
 import bcrypt
+from app import models
 
 load_dotenv()
 
