@@ -1,7 +1,7 @@
 import redis
 import json
 
-redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=6379, decode_responses=True)
 
 def get_cache(key: str):
     value = redis_client.get(key)
