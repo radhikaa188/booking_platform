@@ -77,7 +77,7 @@ CREATE TABLE bookings (
     user_id INTEGER REFERENCES users(id),
     booking_time TIMESTAMP NOT NULL DEFAULT NOW(),
     booking_status booking_status_enum NOT NULL DEFAULT 'pending',
-    idempotency_key VARCHAR(255) UNIQUE
+    idempotency_key VARCHAR(255) UNIQUE,
     refund_transaction_id VARCHAR(255)
 );
 
