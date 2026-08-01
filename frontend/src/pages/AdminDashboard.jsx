@@ -409,7 +409,7 @@ function AdminDashboard() {
                         >
                           <option value="standard">Standard</option>
                           <option value="imax">IMAX</option>
-                          <option value="4dx">4DX</option>
+                          <option value="4dx">4dx</option>
                         </select>
                       </div>
 
@@ -540,7 +540,7 @@ function AdminDashboard() {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Screen Name</label>
                     <input
-                      placeholder="e.g. Screen 2 / 4DX"
+                      placeholder="e.g. Screen 2 / 4dx"
                       value={newScreenName}
                       onChange={(e) => setNewScreenName(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none"
@@ -556,7 +556,7 @@ function AdminDashboard() {
                     >
                       <option value="standard">Standard</option>
                       <option value="imax">IMAX</option>
-                      <option value="4dx">4DX</option>
+                      <option value="4dx">4dx</option>
                     </select>
                   </div>
                 </div>
