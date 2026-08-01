@@ -14,7 +14,7 @@ class Venue(Base):
 class ScreenType(str, enum.Enum):
     standard = "standard"
     imax = "imax"
-    fourdx = "4dx"
+    4dx = "4dx"
 class Screen(Base):
     __tablename__= "screens"
 
