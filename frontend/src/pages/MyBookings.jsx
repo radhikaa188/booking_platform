@@ -12,7 +12,7 @@ const MyBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/bookings/");
+      const response = await api.get("/bookings");
       setBookings(response.data);
     } catch (error) {
       toast.error("Failed to fetch bookings");
