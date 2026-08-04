@@ -6,8 +6,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:radz%4018@postgres:5432/booking_platform
-      - SECRET_KEY=booking_platform_secret_key
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
       - REDIS_HOST=redis
     depends_on:
       - postgres
@@ -17,7 +17,7 @@ services:
     image: postgres:16
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=radz@18
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=booking_platform
     ports:
       - "5432:5432"
