@@ -116,6 +116,13 @@ class ScreenOnboard(BaseModel):
     screen_type: str
     layout: list[SeatLayoutRow]
 
+class ScreenWithVenueOut(BaseModel):
+    id: int
+    venue_id: int
+    name: str
+    screen_type: str
+    venue_name: str
+
 class VenueOnboard(BaseModel):
     name: str
     address: str

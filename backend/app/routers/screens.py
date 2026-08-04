@@ -10,14 +10,33 @@ from app.redis_client import get_cache, set_cache
 
 router = APIRouter(prefix="/screens", tags=["screens"])
 
-@router.get("/", response_model=list[schemas.ScreenOut])
+@router.get("/", response_model=list[schemas.ScreenWithVenueOut])
 def list_screens(db: Session = Depends(get_db)):
     cached = get_cache("all_screens")
     if cached:
         return cached
 
-    screens = db.query(models.Screen).all()
-    result = [schemas.ScreenOut.model_validate(s).model_dump() for s in screens]
+    results = (
+        db.query(
+            models.Screen.id,
+            models.Screen.venue_id,
+            models.Screen.name,
+            models.Screen.screen_type,
+            models.Venue.name.label("venue_name")
+        )
+        .join(models.Venue, models.Screen.venue_id == models.Venue.id)
+        .all()
+    )
+    result = [
+        {
+            "id": r.id,
+            "venue_id": r.venue_id,
+            "name": r.name,
+            "screen_type": r.screen_type.value,
+            "venue_name": r.venue_name
+        }
+        for r in results
+    ]
     set_cache("all_screens", result, ttl_seconds=300)
     return result
 
