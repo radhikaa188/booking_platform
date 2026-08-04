@@ -586,7 +586,7 @@ function AdminDashboard() {
                     <option value="">-- Select Screen --</option>
                     {allScreens.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {screen.venue_name}  — {s.name} ({s.screen_type})
+                        {s.venue_name} — {s.name} ({s.screen_type})
                       </option>
                     ))}
                   </select>
@@ -715,7 +715,7 @@ function AdminDashboard() {
                     <option value="">-- Choose Screen --</option>
                     {allScreens.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {screen.venue_name}  — {s.name} ({s.screen_type})
+                        {s.venue_name}  — {s.name} ({s.screen_type})
                       </option>
                     ))}
                   </select>
