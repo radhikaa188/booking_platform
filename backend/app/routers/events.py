@@ -4,7 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
 from cachetools import TTLCache
-from app.redis_client import get_cache, set_cache
+from app.redis_client import get_cache, set_cache, delete_cache
 
 
 events_cache = TTLCache(maxsize=100, ttl=300)
@@ -40,15 +40,15 @@ def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), curr
         screen_id=event.screen_id
     )
     db.add(new_event)
-    db.commit()
-    db.refresh(new_event)
+    db.flush()
 
     # Automatically generate event_seats for every seat on this screen
     seats = db.query(models.Seat).filter(models.Seat.screen_id == new_event.screen_id).all()
     for seat in seats:
         db.add(models.EventSeat(event_id=new_event.id, seat_id=seat.id))
     db.commit()
-
+    db.refresh(new_event)
+    delete_cache("all_events")
     return new_event
 
 

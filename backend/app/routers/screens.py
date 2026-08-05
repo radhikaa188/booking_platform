@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
-from app.redis_client import get_cache, set_cache
+from app.redis_client import get_cache, set_cache, delete_cache
 
 
 #screens_cache = TTLCache(maxsize=100, ttl=300)
@@ -63,7 +63,7 @@ def add_seats_to_screen(screen_id: int, layout: list[schemas.SeatLayoutRow], db:
         for s in new_seats:
             db.refresh(s)
         return new_seats
-
+        delete_cache("all_seats")
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to add seats: {str(e)}")

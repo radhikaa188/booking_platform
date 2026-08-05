@@ -4,7 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user, require_admin
 
-from app.redis_client import get_cache, set_cache
+from app.redis_client import get_cache, set_cache, delete_cache
 
 
 #venues_cache = TTLCache(maxsize=100, ttl=300)
@@ -49,6 +49,9 @@ def onboard_venue(payload: schemas.VenueOnboard, db: Session = Depends(get_db), 
 
         db.commit()  # ONE commit — everything saved together, only if we reach this line
         db.refresh(new_venue)
+        delete_cache("all_venues")   # ← naya add karo
+        delete_cache("all_screens")  # ← screens bhi banی, isliye ye bhi clear karo
+        delete_cache("all_seats")
         return new_venue
 
     except Exception as e:
@@ -81,6 +84,7 @@ def add_screen_to_venue(venue_id: int, screen_data: schemas.ScreenOnboard, db: S
 
         db.commit()
         db.refresh(new_screen)
+        delete_cache("all_screens")
         return new_screen
 
     except Exception as e:

@@ -12,3 +12,6 @@ def get_cache(key: str):
 
 def set_cache(key: str, value, ttl_seconds: int = 300):
     redis_client.setex(key, ttl_seconds, json.dumps(value, default=str))
+
+def delete_cache(key: str):
+    redis_client.delete(key)
