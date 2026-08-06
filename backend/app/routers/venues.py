@@ -90,3 +90,28 @@ def add_screen_to_venue(venue_id: int, screen_data: schemas.ScreenOnboard, db: S
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to add screen: {str(e)}")
+
+@router.delete("/{venue_id}")
+def delete_venue(venue_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
+    venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    screen_ids = db.query(models.Screen.id).filter(models.Screen.venue_id == venue_id).subquery()
+    event_ids = db.query(models.Event.id).filter(models.Event.screen_id.in_(screen_ids)).subquery()
+    event_seat_ids = db.query(models.EventSeat.id).filter(models.EventSeat.event_id.in_(event_ids)).subquery()
+
+    db.query(models.BookingSeat).filter(models.BookingSeat.event_seat_id.in_(event_seat_ids)).delete(synchronize_session=False)
+    db.query(models.EventSeat).filter(models.EventSeat.event_id.in_(event_ids)).delete(synchronize_session=False)
+    db.query(models.Event).filter(models.Event.screen_id.in_(screen_ids)).delete(synchronize_session=False)
+    db.query(models.Seat).filter(models.Seat.screen_id.in_(screen_ids)).delete(synchronize_session=False)
+    db.query(models.Screen).filter(models.Screen.venue_id == venue_id).delete(synchronize_session=False)
+    db.delete(venue)
+    db.commit()
+
+    delete_cache("all_venues")
+    delete_cache("all_screens")
+    delete_cache("all_seats")
+    delete_cache("all_events")
+
+    return {"detail": f"Venue {venue_id} deleted"}

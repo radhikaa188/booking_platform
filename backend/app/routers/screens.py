@@ -67,3 +67,25 @@ def add_seats_to_screen(screen_id: int, layout: list[schemas.SeatLayoutRow], db:
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to add seats: {str(e)}")
+
+@router.delete("/{screen_id}")
+def delete_screen(screen_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
+    screen = db.query(models.Screen).filter(models.Screen.id == screen_id).first()
+    if not screen:
+        raise HTTPException(status_code=404, detail="Screen not found")
+
+    event_ids = db.query(models.Event.id).filter(models.Event.screen_id == screen_id).subquery()
+    event_seat_ids = db.query(models.EventSeat.id).filter(models.EventSeat.event_id.in_(event_ids)).subquery()
+
+    db.query(models.BookingSeat).filter(models.BookingSeat.event_seat_id.in_(event_seat_ids)).delete(synchronize_session=False)
+    db.query(models.EventSeat).filter(models.EventSeat.event_id.in_(event_ids)).delete(synchronize_session=False)
+    db.query(models.Event).filter(models.Event.screen_id == screen_id).delete(synchronize_session=False)
+    db.query(models.Seat).filter(models.Seat.screen_id == screen_id).delete(synchronize_session=False)
+    db.delete(screen)
+    db.commit()
+
+    delete_cache("all_screens")
+    delete_cache("all_seats")
+    delete_cache("all_events")
+
+    return {"detail": f"Screen {screen_id} deleted"}

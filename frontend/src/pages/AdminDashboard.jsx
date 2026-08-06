@@ -241,6 +241,38 @@ function AdminDashboard() {
     }
   };
 
+  const handleDeleteVenue = async (venueId) => {
+  if (!window.confirm(`Delete venue #${venueId}? This will delete all its screens, seats, and events too.`)) return;
+  try {
+    await api.delete(`/venues/${venueId}`);
+    toast.success('Venue deleted');
+    fetchVenues(); // ya jo bhi function venues list refresh karta hai
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Failed to delete venue');
+  }
+};
+
+const handleDeleteScreen = async (screenId) => {
+  if (!window.confirm(`Delete screen #${screenId}? This will delete its seats and events too.`)) return;
+  try {
+    await api.delete(`/screens/${screenId}`);
+    toast.success('Screen deleted');
+    fetchScreens();
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Failed to delete screen');
+  }
+};
+
+const handleDeleteEvent = async (eventId) => {
+  if (!window.confirm(`Delete event #${eventId}?`)) return;
+  try {
+    await api.delete(`/events/${eventId}`);
+    toast.success('Event deleted');
+    fetchEvents();
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Failed to delete event');
+  }
+};
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       {/* Dashboard Top Header */}
@@ -498,6 +530,12 @@ function AdminDashboard() {
                       <p className="text-xs text-slate-500 flex items-center">
                         <MapPin className="w-3 h-3 mr-1 text-slate-400" /> {v.address}
                       </p>
+                      <button
+                        onClick={() => handleDeleteVenue(v.id)}
+                        className="text-xs text-red-600 hover:text-red-800 font-semibold mt-2"
+                      >
+                        Delete Venue
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -661,6 +699,12 @@ function AdminDashboard() {
                       </div>
                       <h4 className="font-bold text-slate-900 mt-1">{s.name}</h4>
                       <p className="text-xs text-slate-500 mt-1">Venue ID: #{s.venue_id}</p>
+                        <button
+                          onClick={() => handleDeleteScreen(s.id)}
+                          className="text-xs text-red-600 hover:text-red-800 font-semibold mt-2"
+                        >
+                          Delete Screen
+                        </button>
                     </div>
                   ))}
                 </div>
@@ -779,6 +823,14 @@ function AdminDashboard() {
                           <td className="py-3 px-4">Screen #{evt.screen_id}</td>
                           <td className="py-3 px-4">{new Date(evt.start_time).toLocaleString()}</td>
                           <td className="py-3 px-4">{new Date(evt.end_time).toLocaleString()}</td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleDeleteEvent(evt.id)}
+                            className="text-xs text-red-600 hover:text-red-800 font-semibold"
+                          >
+                            Delete
+                          </button>
+                        </td>
                         </tr>
                       ))}
                     </tbody>

@@ -80,3 +80,24 @@ def get_event_details(event_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Event not found")
     return result
+
+@router.delete("/{event_id}")
+def delete_event(event_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_admin)):
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Pehle booking_seats delete karo (jo is event ke event_seats se linked hain)
+    event_seat_ids = db.query(models.EventSeat.id).filter(models.EventSeat.event_id == event_id).subquery()
+    db.query(models.BookingSeat).filter(models.BookingSeat.event_seat_id.in_(event_seat_ids)).delete(synchronize_session=False)
+
+    # Phir event_seats delete karo
+    db.query(models.EventSeat).filter(models.EventSeat.event_id == event_id).delete(synchronize_session=False)
+
+    # Ab event delete karo
+    db.delete(event)
+    db.commit()
+
+    delete_cache("all_events")
+
+    return {"detail": f"Event {event_id} deleted"}
