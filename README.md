@@ -22,6 +22,7 @@ Most beginner backend projects are CRUD wrappers around a database. This one is 
 | Cache / Rate Limiting | Redis |
 | Frontend | React, Vite, Tailwind CSS |
 | Auth | JWT (python-jose), bcrypt |
+| Email / Notifications | Resend API |
 | Background Jobs | APScheduler |
 | Containerization | Docker, Docker Compose |
 | Reverse Proxy / SSL | Nginx, Let's Encrypt (Certbot) |
@@ -111,12 +112,20 @@ This was deliberately done the "hard way" — raw EC2 + Docker + Nginx — rathe
 
 ---
 
-## Known Gaps (honest, not hidden)
+### Email Notifications
+
+* Integrated **Resend API** for transactional email notifications.
+* Users receive an email whenever a booking is **successfully confirmed** or **cancelled**.
+* Booking emails are triggered from the backend after the corresponding booking state change, keeping users informed of their ticket status without requiring them to check the platform manually.
+
+---
+
+## Known Gaps
 
 - No automated test suite (pytest) — all testing has been manual, via `/docs` and live end-to-end testing.
 - No CI/CD pipeline — deployment is currently manual (`git pull` + `docker compose up --build` on the EC2 instance).
 - Real payment gateway integration was attempted but blocked by KYC/business-verification requirements across three providers; a well-designed simulated gateway is used instead.
-- Google OAuth, a waiting-list system, and email notifications were scoped, partially attempted, and consciously deprioritized in favor of strengthening the core (concurrency, security, deployment) rather than chasing feature breadth.
+- Google OAuth, and a waiting-list were scoped, partially attempted, and consciously deprioritized in favor of strengthening the core (concurrency, security, deployment) rather than chasing feature breadth.
 
 ---
 
