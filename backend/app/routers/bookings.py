@@ -9,6 +9,7 @@ from slowapi.util import get_remote_address
 from fastapi import Request
 from app.payment_gateway import process_payment, process_refund
 from app.logger import logger
+from app.email_service import send_booking_confirmation, send_cancellation_email
 import os
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
@@ -207,3 +208,50 @@ def get_user_bookings(db: Session = Depends(get_db), current_user: models.User =
         )
 
     return result
+
+@router.post("/{booking_id}/pay", response_model=schemas.BookingOut)
+def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # ... existing code ...
+
+    payment_result = process_payment(booking_seat.price_paid)
+
+    if payment_result["status"] == "success":
+        event_seat.seat_status = "booked"
+        event_seat.hold_expires_at = None
+        booking.booking_status = "confirmed"
+    else:
+        event_seat.seat_status = "available"
+        event_seat.hold_expires_at = None
+        booking.booking_status = "cancelled"
+
+    booking.idempotency_key = payment.idempotency_key
+    db.commit()
+    db.refresh(booking)
+
+    if payment_result["status"] == "success":
+        send_booking_confirmation(current_user.email, booking.id, booking_seat.price_paid)  # ← naya add kiya
+
+    if payment_result["status"] != "success":
+        raise HTTPException(status_code=402, detail="Payment failed. Seat released.")
+
+    return booking
+
+@router.post("/{booking_id}/cancel", response_model=schemas.BookingOut)
+def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # ... existing code ...
+
+    refund_result = process_refund(booking_seat.price_paid, booking.idempotency_key)
+
+    event_seat.seat_status = "available"
+    event_seat.hold_expires_at = None
+    booking.booking_status = "cancelled"
+    booking.refund_transaction_id = refund_result["refund_id"]
+
+    db.commit()
+    db.refresh(booking)
+
+    send_cancellation_email(current_user.email, booking.id, booking_seat.price_paid)  # ← naya add kiya
+
+    logger.info(f"Booking {booking_id} cancelled, refund {refund_result['refund_id']} issued for ₹{booking_seat.price_paid}")
+
+    return booking

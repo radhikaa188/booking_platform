@@ -15,11 +15,12 @@ router = APIRouter(prefix="/events", tags=["events"])
 def list_events(db: Session = Depends(get_db)):
     cached = get_cache("all_events")
     if cached:
-        print("✅ Serving from REDIS CACHE")
         return cached
 
-    print("🔍 Querying DATABASE")
-    events = db.query(models.Event).all()
+    events = db.query(models.Event).filter(
+        models.Event.end_time >= datetime.utcnow()
+    ).all()
+    
     result = [schemas.EventOut.model_validate(e).model_dump() for e in events]
     set_cache("all_events", result, ttl_seconds=300)
     return result
