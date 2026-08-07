@@ -5,7 +5,7 @@ from app import models, schemas
 from app.auth import get_current_user, require_admin
 from cachetools import TTLCache
 from app.redis_client import get_cache, set_cache, delete_cache
-
+from datetime import datetime
 
 events_cache = TTLCache(maxsize=100, ttl=300)
 
