@@ -17,11 +17,13 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("REDIS_URL"))
 
 HOLD_DURATION_MINUTES = 5
+
+
 @router.post("/hold", response_model=schemas.BookingOut)
 @limiter.limit("5/minute")
 def hold_seat(request: Request, body: schemas.BookingRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     event_seat = db.query(models.EventSeat).filter(
-        models.EventSeat.id == body.event_seat_id   # ← request.event_seat_id NAHI, body.event_seat_id
+        models.EventSeat.id == body.event_seat_id
     ).with_for_update().first()
 
     if not event_seat:
@@ -52,7 +54,6 @@ def hold_seat(request: Request, body: schemas.BookingRequest, db: Session = Depe
     db.refresh(new_booking)
     logger.info(f"Seat {body.event_seat_id} held by user {current_user.id}, booking {new_booking.id}")
     return new_booking
-
 
 
 @router.post("/{booking_id}/pay", response_model=schemas.BookingOut)
@@ -101,10 +102,13 @@ def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Sessio
     db.commit()
     db.refresh(booking)
 
-    if payment_result["status"] != "success":
+    if payment_result["status"] == "success":
+        send_booking_confirmation(current_user.email, booking.id, booking_seat.price_paid)
+    else:
         raise HTTPException(status_code=402, detail="Payment failed. Seat released.")
 
     return booking
+
 
 @router.post("/{booking_id}/cancel", response_model=schemas.BookingOut)
 def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -132,9 +136,12 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user:
     db.commit()
     db.refresh(booking)
 
+    send_cancellation_email(current_user.email, booking.id, booking_seat.price_paid)
+
     logger.info(f"Booking {booking_id} cancelled, refund {refund_result['refund_id']} issued for ₹{booking_seat.price_paid}")
 
     return booking
+
 
 @router.get("", response_model=list[schemas.BookingDetailOut])
 def get_user_bookings(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -208,50 +215,3 @@ def get_user_bookings(db: Session = Depends(get_db), current_user: models.User =
         )
 
     return result
-
-@router.post("/{booking_id}/pay", response_model=schemas.BookingOut)
-def pay_for_booking(booking_id: int, payment: schemas.PaymentRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # ... existing code ...
-
-    payment_result = process_payment(booking_seat.price_paid)
-
-    if payment_result["status"] == "success":
-        event_seat.seat_status = "booked"
-        event_seat.hold_expires_at = None
-        booking.booking_status = "confirmed"
-    else:
-        event_seat.seat_status = "available"
-        event_seat.hold_expires_at = None
-        booking.booking_status = "cancelled"
-
-    booking.idempotency_key = payment.idempotency_key
-    db.commit()
-    db.refresh(booking)
-
-    if payment_result["status"] == "success":
-        send_booking_confirmation(current_user.email, booking.id, booking_seat.price_paid)  # ← naya add kiya
-
-    if payment_result["status"] != "success":
-        raise HTTPException(status_code=402, detail="Payment failed. Seat released.")
-
-    return booking
-
-@router.post("/{booking_id}/cancel", response_model=schemas.BookingOut)
-def cancel_booking(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # ... existing code ...
-
-    refund_result = process_refund(booking_seat.price_paid, booking.idempotency_key)
-
-    event_seat.seat_status = "available"
-    event_seat.hold_expires_at = None
-    booking.booking_status = "cancelled"
-    booking.refund_transaction_id = refund_result["refund_id"]
-
-    db.commit()
-    db.refresh(booking)
-
-    send_cancellation_email(current_user.email, booking.id, booking_seat.price_paid)  # ← naya add kiya
-
-    logger.info(f"Booking {booking_id} cancelled, refund {refund_result['refund_id']} issued for ₹{booking_seat.price_paid}")
-
-    return booking
