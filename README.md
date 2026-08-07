@@ -89,6 +89,12 @@ available → held (5 min) → confirmed (on payment success)
 - Delete endpoints for venues/screens/events/seats — each cascades correctly through the foreign-key chain (e.g., deleting a venue also cleans up its screens, seats, events, event-seats, and booking-seats, in the correct dependency order).
 - A Python seeding script (`seed_data.py`) that populates realistic demo data via the live API rather than requiring manual form entry.
 
+### Email Notifications
+
+* Integrated **Resend API** for transactional booking emails.
+* Emails are automatically triggered when a booking is **confirmed** or **cancelled**.
+* Currently running through Resend's free/testing configuration, so email delivery is restricted to the verified account recipient. Production deployment would require verifying a sending domain and configuring the appropriate recipient flow.
+  
 ---
 
 ## Deployment (fully manual, no PaaS shortcuts)
@@ -109,14 +115,6 @@ This was deliberately done the "hard way" — raw EC2 + Docker + Nginx — rathe
 - Learned the hard way that **CORS errors in the browser console are often a red herring** — a Redis connection failure was crashing several endpoints with 500 errors, and because the browser can't read CORS headers off a failed request, it reported the failure as a CORS problem on unrelated endpoints. Real fix required reading backend container logs, not chasing the CORS message.
 - SPA routing 404 on Vercel (direct navigation to `/admin` failed on refresh) — fixed with a `vercel.json` rewrite rule.
 - Vite environment variables are baked in at *build* time — changing a value in the Vercel dashboard does nothing until a fresh build is triggered.
-
----
-
-### Email Notifications
-
-* Integrated **Resend API** for transactional booking emails.
-* Emails are automatically triggered when a booking is **confirmed** or **cancelled**.
-* Currently running through Resend's free/testing configuration, so email delivery is restricted to the verified account recipient. Production deployment would require verifying a sending domain and configuring the appropriate recipient flow.
 
 ---
 
