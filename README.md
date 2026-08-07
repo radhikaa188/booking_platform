@@ -114,9 +114,9 @@ This was deliberately done the "hard way" — raw EC2 + Docker + Nginx — rathe
 
 ### Email Notifications
 
-* Integrated **Resend API** for transactional email notifications.
-* Users receive an email whenever a booking is **successfully confirmed** or **cancelled**.
-* Booking emails are triggered from the backend after the corresponding booking state change, keeping users informed of their ticket status without requiring them to check the platform manually.
+* Integrated **Resend API** for transactional booking emails.
+* Emails are automatically triggered when a booking is **confirmed** or **cancelled**.
+* Currently running through Resend's free/testing configuration, so email delivery is restricted to the verified account recipient. Production deployment would require verifying a sending domain and configuring the appropriate recipient flow.
 
 ---
 
